@@ -25,6 +25,11 @@ type User struct {
     College         string    `json:"college,omitempty" gorm:"type:varchar(100)"`
     ContactNumber   string    `json:"contact_number,omitempty" gorm:"type:varchar(20)"`
     Address         string    `json:"address,omitempty" gorm:"type:text"`
+
+    ResetToken      string    `json:"-" gorm:"type:varchar(64)"`
+    ResetTokenExpiry time.Time `json:"-" gorm:"type:timestamp"`
+    ResetAttempts   int       `json:"-" gorm:"default:0"`
+    LastResetRequest time.Time `json:"-" gorm:"type:timestamp"`
     
 
     QRCodeData      string    `json:"qr_code_data,omitempty" gorm:"type:text"`

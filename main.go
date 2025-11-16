@@ -2,8 +2,8 @@ package main
 
 import (
     "log"
-    "myapp/config"
-    "myapp/handlers"
+    "AttendanceManagementSystem/config"
+    "AttendanceManagementSystem/handlers"
     "os"
     "time"
 
@@ -12,26 +12,26 @@ import (
 )
 
 func main() {
-    // Load environment variables
+
     if err := godotenv.Load(); err != nil {
-        log.Println("⚠️  .env file not found, using system environment variables")
+        log.Println("  .env file not found, using system environment variables")
     }
 
-    // Connect to database
+
     config.ConnectDB()
     
-    // Display database info
+   
     config.DisplayTableStructure()
     config.DisplayUserStats()
 
-    // Create Fiber app
+
     app := fiber.New(fiber.Config{
         AppName: "Attendance System API",
     })
 
-    // Basic middleware
+ 
     app.Use(func(c *fiber.Ctx) error {
-        // Simple CORS
+      
         c.Set("Access-Control-Allow-Origin", "*")
         c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
         c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Role, X-User-ID")
@@ -43,7 +43,7 @@ func main() {
         return c.Next()
     })
 
-    // Public routes
+  
     app.Get("/health", healthCheck)
     app.Post("/register", handlers.Register)
     app.Post("/verify", handlers.VerifyEmail)
@@ -51,7 +51,11 @@ func main() {
     app.Get("/user/:user_id", handlers.GetUserProfile)
     app.Post("/resend-verification", handlers.ResendVerificationCode)
 
-    // Admin management routes (Superadmin only)
+    // Password reset routes
+    app.Post("/forgot-password", handlers.RequestPasswordReset)
+    app.Post("/reset-password", handlers.ResetPassword)
+    app.Get("/verify-reset-code", handlers.VerifyResetCode)
+
     adminRoutes := app.Group("/admin")
     adminRoutes.Post("/promote", handlers.PromoteToAdmin)
     adminRoutes.Post("/demote", handlers.DemoteToStudent)
@@ -59,7 +63,7 @@ func main() {
     adminRoutes.Get("/students", handlers.GetAllStudents)
     adminRoutes.Delete("/cleanup-expired", handlers.CleanupExpiredRegistrations)
 
-    // QR Code Management routes
+
     qrRoutes := app.Group("/qrcode")
     qrRoutes.Post("/types", handlers.CreateQRCodeType)          
     qrRoutes.Get("/types", handlers.GetQRCodeTypes)             
@@ -70,16 +74,23 @@ func main() {
     qrRoutes.Put("/course", handlers.UpdateCourseQRCodeType)        
     qrRoutes.Get("/course/students", handlers.GetStudentsByCourse)
 
-    // 404 Handler
+
     app.Use(notFoundHandler)
 
-    // Start server
+ 
     port := getPort()
     log.Printf(" Server starting on :%s", port)
     log.Printf(" Superadmin Login:")
     log.Printf("    Email: superadmin@system.com")
     log.Printf("    Password: superadmin123")
     log.Printf("    User ID: U2025-0000")
+    
+    // Add password reset info to logs
+    log.Printf(" Password Reset Endpoints:")
+    log.Printf("    POST /forgot-password - Request password reset with 6-digit code")
+    log.Printf("    POST /reset-password - Reset password with email and code")
+    log.Printf("    GET /verify-reset-code - Verify reset code")
+    
     log.Fatal(app.Listen(":" + port))
 }
 

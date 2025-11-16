@@ -3,9 +3,9 @@ package handlers
 import (
     "fmt"
     "log"
-    "myapp/config"
-    "myapp/models"
-    "myapp/utils"
+    "AttendanceManagementSystem/config"
+    "AttendanceManagementSystem/models"
+    "AttendanceManagementSystem/utils"
     "time"
 
     "github.com/gofiber/fiber/v2"

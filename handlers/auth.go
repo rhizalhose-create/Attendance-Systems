@@ -2,18 +2,17 @@ package handlers
 
 import (
     "log"
-    "myapp/config"
-    "myapp/models"
-    "myapp/utils"
+    "AttendanceManagementSystem/config"
+    "AttendanceManagementSystem/models"
+    "AttendanceManagementSystem/utils"
     "time"
 
     "github.com/gofiber/fiber/v2"
     "golang.org/x/crypto/bcrypt"
 )
 
-// Use constants from utils package - NO NEED TO REDECLARE
 
-// In-memory storage for verification codes
+
 var verificationCodes = make(map[string]string)
 
 func Register(c *fiber.Ctx) error {

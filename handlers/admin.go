@@ -1,8 +1,8 @@
 package handlers
 
 import (
-    "myapp/config"
-    "myapp/models"
+    "AttendanceManagementSystem/config"
+    "AttendanceManagementSystem/models"
     "github.com/gofiber/fiber/v2"
 )
 

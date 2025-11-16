@@ -24,6 +24,17 @@ const (
     ErrAdminAccessRequired          = "Admin access required"
     ErrFailedCleanupRegistrations   = "Failed to clean up expired registrations"
     
+    // Error messages - Password Reset
+    ErrEmailRequired                = "Email is required"
+    ErrUserNotFoundForEmail         = "No user found with this email"
+    ErrResetTokenInvalid            = "Invalid or expired reset token"
+    ErrResetTokenExpired            = "Reset token has expired"
+    ErrPasswordRequired             = "New password is required"
+    ErrPasswordTooShort             = "Password must be at least 6 characters"
+    ErrResetAttemptsExceeded        = "Too many reset attempts. Please try again later."
+    ErrFailedToProcessReset         = "Failed to process password reset request"
+    ErrFailedToResetPassword        = "Failed to reset password"
+    
     // Error messages - QR Code
     ErrQRCodeTypeExists             = "QR code type already exists"
     ErrInvalidQRCodeType            = "Invalid QR code type"
@@ -31,6 +42,11 @@ const (
     ErrFailedToFetchQRTypes         = "Failed to fetch QR code types"
     ErrFailedToFetchEvents          = "Failed to fetch events"
     ErrCourseYearLevelRequired      = "Course and year_level parameters are required"
+    
+    // Success messages
+    MsgResetEmailSent               = "Password reset email sent successfully"
+    MsgPasswordResetSuccess         = "Password reset successfully"
+    MsgResetTokenValid              = "Reset token is valid"
     
     // Header names
     HeaderUserRole = "X-User-Role"
@@ -45,9 +61,11 @@ const (
     QueryCourseWhere       = "course = ?"
     QueryYearLevelWhere    = "year_level = ?"
     QueryRoleWhere         = "role = ?"
+    QueryResetTokenWhere   = "reset_token = ?"
     
     // Combined queries
     QueryTypeNameAndActive = "type_name = ? AND is_active = ?"
     QueryCourseYearRole    = "course = ? AND year_level = ? AND role = ?"
     QueryActiveAndEndTime  = "is_active = ? AND end_time > ?"
+    QueryResetTokenValid   = "reset_token = ? AND reset_token_expiry > ?"
 )
