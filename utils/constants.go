@@ -43,10 +43,33 @@ const (
     ErrFailedToFetchEvents          = "Failed to fetch events"
     ErrCourseYearLevelRequired      = "Course and year_level parameters are required"
     
+    // Error messages - Events
+    ErrEventNotFound                = "Event not found"
+    ErrEventTimeInvalid             = "Event time is invalid"
+    ErrEventFieldsRequired          = "Event name, type, and description are required"
+    ErrEventStartTimePast           = "Start time cannot be in the past"
+    ErrEventStartAfterEnd           = "Start time cannot be after end time"
+    ErrFailedToCreateEvent          = "Failed to create event"
+    ErrFailedToUpdateEvent          = "Failed to update event"
+    ErrFailedToDeleteEvent          = "Failed to delete event"
+
+    
     // Success messages
     MsgResetEmailSent               = "Password reset email sent successfully"
     MsgPasswordResetSuccess         = "Password reset successfully"
     MsgResetTokenValid              = "Reset token is valid"
+    MsgEventCreated                 = "Event created successfully"
+    MsgEventUpdated                 = "Event updated successfully"
+    MsgEventDeleted                 = "Event deleted successfully"
+    
+    // Log messages
+    LogEventCreated                 = "Event created successfully: %s by %s"
+    LogEventUpdated                 = "Event updated successfully: %s"
+    LogEventDeleted                 = "Event deleted successfully: %s"
+    LogFailedToCreateEvent          = "Failed to create event: %v"
+    LogFailedToUpdateEvent          = "Failed to update event: %v"
+    LogFailedToDeleteEvent          = "Failed to delete event: %v"
+    LogFailedToFetchEvents          = "Failed to fetch events: %v"
     
     // Header names
     HeaderUserRole = "X-User-Role"
@@ -68,4 +91,8 @@ const (
     QueryCourseYearRole    = "course = ? AND year_level = ? AND role = ?"
     QueryActiveAndEndTime  = "is_active = ? AND end_time > ?"
     QueryResetTokenValid   = "reset_token = ? AND reset_token_expiry > ?"
+
+
+
+    QueryEventIDWhere = "id = ?"
 )

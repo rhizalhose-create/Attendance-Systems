@@ -52,53 +52,6 @@ func CreateQRCodeType(c *fiber.Ctx) error {
     })
 }
 
-// CreateEvent - Admin/SuperAdmin can create events with QR codes
-func CreateEvent(c *fiber.Ctx) error {
-    var req models.CreateEventRequest
-    if err := c.BodyParser(&req); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": utils.ErrCannotParseJSON})
-    }
-
-    // Check if user is admin or superadmin
-    userRole := c.Get(utils.HeaderUserRole)
-    if userRole != "admin" && userRole != "superadmin" {
-        return c.Status(403).JSON(fiber.Map{"error": utils.ErrAdminAccessRequired})
-    }
-
-    // Verify QR code type exists
-    var qrType models.QRCodeType
-    if err := config.DB.Where(utils.QueryTypeNameAndActive, req.EventType, true).First(&qrType).Error; err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": utils.ErrInvalidQRCodeType})
-    }
-
-    // Get user ID from context
-    userID := c.Get(utils.HeaderUserID)
-
-    event := models.QRCodeEvent{
-        EventName:   req.EventName,
-        EventType:   req.EventType,
-        Description: req.Description,
-        Course:      req.Course,
-        Department:  req.Department,
-        College:     req.College,
-        CreatedBy:   userID,
-        IsActive:    true,
-        StartTime:   req.StartTime,
-        EndTime:     req.EndTime,
-        CreatedAt:   time.Now(),
-        UpdatedAt:   time.Now(),
-    }
-
-    if err := config.DB.Create(&event).Error; err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "Failed to create event"})
-    }
-
-    return c.JSON(fiber.Map{
-        "message": "Event created successfully",
-        "event":   event,
-    })
-}
-
 // UpdateUserQRCodeType - Admin/SuperAdmin can update user's QR code type
 func UpdateUserQRCodeType(c *fiber.Ctx) error {
     var req models.UpdateUserQRCodeRequest
@@ -197,8 +150,8 @@ func GetQRCodeTypes(c *fiber.Ctx) error {
     })
 }
 
-// GetEvents - Get all active events
-func GetEvents(c *fiber.Ctx) error {
+// GetQRCodeEvents - Get all active QR code events
+func GetQRCodeEvents(c *fiber.Ctx) error {
     var events []models.QRCodeEvent
     
     if err := config.DB.Where(utils.QueryActiveAndEndTime, true, time.Now()).Find(&events).Error; err != nil {
