@@ -79,7 +79,7 @@ func main() {
     log.Printf("    Password: superadmin123")
     log.Printf("    User ID: U2025-0000")
     
-    // Add password reset info to logs
+
     log.Printf(" Password Reset Endpoints:")
     log.Printf("    POST /forgot-password - Request password reset with 6-digit code")
     log.Printf("    POST /reset-password - Reset password with email and code")

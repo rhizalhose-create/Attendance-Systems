@@ -30,7 +30,7 @@ func RequestPasswordReset(c *fiber.Ctx) error {
     var user models.User
     if err := config.DB.Where(utils.QueryEmailWhere, req.Email).First(&user).Error; err != nil {
         // Return success even if user not found for security
-        log.Printf("❌ User not found for password reset: %s", req.Email)
+        log.Printf(" User not found for password reset: %s", req.Email)
         return c.JSON(fiber.Map{
             "message": "If the email exists, a reset code will be sent",
             "note":    "Check your email for 6-digit reset code",
@@ -60,17 +60,17 @@ func RequestPasswordReset(c *fiber.Ctx) error {
     }
 
     if err := config.DB.Model(&user).Updates(updates).Error; err != nil {
-        log.Printf("❌ Failed to set reset code for %s: %v", req.Email, err)
+        log.Printf(" Failed to set reset code for %s: %v", req.Email, err)
         return c.Status(500).JSON(fiber.Map{"error": "Failed to process reset request"})
     }
 
     // Send reset email with 6-digit code
     if err := utils.SendPasswordResetEmail(user.Email, resetCode); err != nil {
         log.Printf("⚠️ Failed to send reset email to %s: %v", user.Email, err)
-        // Continue anyway - user can use the code manually
+   
     }
 
-    log.Printf("✅ Password reset requested for: %s - Code: %s", user.Email, resetCode)
+    log.Printf(" Password reset requested for: %s - Code: %s", user.Email, resetCode)
 
     return c.JSON(fiber.Map{
         "message": "Password reset code sent successfully",
@@ -112,7 +112,7 @@ func ResetPassword(c *fiber.Ctx) error {
     var user models.User
     if err := config.DB.Where("email = ? AND reset_token = ? AND reset_token_expiry > ?", 
         req.Email, req.Code, time.Now()).First(&user).Error; err != nil {
-        log.Printf("❌ Invalid or expired reset code for %s: %s", req.Email, req.Code)
+        log.Printf(" Invalid or expired reset code for %s: %s", req.Email, req.Code)
         return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired reset code"})
     }
 
