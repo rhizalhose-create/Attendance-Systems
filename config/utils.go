@@ -7,12 +7,12 @@ import (
     "AttendanceManagementSystem/models"
 )
 
-// Define constants for commonly used query conditions
+
 const (
     roleCondition = "role = ?"
 )
 
-// Define constants for common column types
+
 const (
     varchar100     = "VARCHAR(100)"
     varchar100NotNull = "VARCHAR(100) NOT NULL DEFAULT ''"
@@ -39,9 +39,9 @@ func DisplayTableStructure() {
     
     var columns []ColumnInfo
     result := DB.Raw(`
-        SELECT column_name, data_type, is_nullable 
-        FROM information_schema.columns 
-        WHERE table_name = 'users' 
+        SELECT column_name, data_type, is_nullable
+        FROM information_schema.columns
+        WHERE table_name = 'users'
         ORDER BY ordinal_position
     `).Scan(&columns)
     

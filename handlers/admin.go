@@ -133,7 +133,7 @@ func GetAllAdmins(c *fiber.Ctx) error {
     })
 }
 
-// Get all students (for admin management)
+
 func GetAllStudents(c *fiber.Ctx) error {
     var students []models.User
     

@@ -11,26 +11,24 @@ import (
     "github.com/gofiber/fiber/v2"
 )
 
-// CreateQRCodeType - Admin/SuperAdmin can create QR code types
 func CreateQRCodeType(c *fiber.Ctx) error {
     var req models.CreateQRCodeTypeRequest
     if err := c.BodyParser(&req); err != nil {
         return c.Status(400).JSON(fiber.Map{"error": utils.ErrCannotParseJSON})
     }
 
-    // Check if user is admin or superadmin
+
     userRole := c.Get(utils.HeaderUserRole)
     if userRole != "admin" && userRole != "superadmin" {
         return c.Status(403).JSON(fiber.Map{"error": utils.ErrAdminAccessRequired})
     }
 
-    // Check if type already exists
     var existingType models.QRCodeType
     if err := config.DB.Where(utils.QueryTypeNameWhere, req.TypeName).First(&existingType).Error; err == nil {
         return c.Status(400).JSON(fiber.Map{"error": utils.ErrQRCodeTypeExists})
     }
 
-    // Get user ID from context
+
     userID := c.Get(utils.HeaderUserID)
 
     qrCodeType := models.QRCodeType{
@@ -164,7 +162,6 @@ func GetQRCodeEvents(c *fiber.Ctx) error {
     })
 }
 
-// GetUserQRCode - Get user's current QR code
 func GetUserQRCode(c *fiber.Ctx) error {
     userID := c.Params("user_id")
 
