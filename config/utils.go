@@ -7,7 +7,7 @@ import (
     "AttendanceManagementSystem/models"
 )
 
-// Define constants for commonly used query conditions
+
 const (
     roleCondition = "role = ?"
 )

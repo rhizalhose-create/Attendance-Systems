@@ -12,7 +12,7 @@ func createSuperAdmin() {
     result := DB.Where("email = ?", "superadmin@system.com").First(&superAdmin)
     
     if result.Error != nil {
-        // Hash password
+    
         hash, _ := bcrypt.GenerateFromPassword([]byte("superadmin123"), 14)
         
         superAdmin := models.User{

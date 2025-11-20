@@ -6,18 +6,18 @@ import (
 	"time"
 )
 
-// GenerateVerificationCode generates a 6-digit random code
+
 func GenerateVerificationCode() string {
 	rand.Seed(time.Now().UnixNano())
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }
 
-// GenerateResetCode generates a 6-digit reset code (alias for consistency)
+
 func GenerateResetCode() string {
 	return GenerateVerificationCode()
 }
 
-// SendVerificationEmail sends email verification code
+
 func SendVerificationEmail(email, verificationCode string) error {
 	htmlBody := fmt.Sprintf(`
 <!DOCTYPE html>
