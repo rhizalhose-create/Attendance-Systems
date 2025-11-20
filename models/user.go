@@ -4,7 +4,7 @@ import "time"
 
 type User struct {
     ID              uint      `json:"-" gorm:"primaryKey;autoIncrement"`
-    UserID          string    `json:"user_id" gorm:"uniqueIndex;type:varchar(255)"`
+    UserID          string    `json:"user_id" gorm:"uniqueIndex;type:varchar(255);not null"`
     Email           string    `json:"email" gorm:"uniqueIndex;not null;type:varchar(255)"`
     Password        string    `json:"password" gorm:"not null;type:varchar(255)"`
     Username        string    `json:"username" gorm:"not null;type:varchar(255)"`
@@ -12,8 +12,7 @@ type User struct {
     IsVerified      bool      `json:"is_verified" gorm:"default:false"`
     CreatedAt       time.Time `json:"created_at" gorm:"autoCreateTime"`
     VerifiedAt      time.Time `json:"verified_at"`
-    
-    StudentNumber   string    `json:"student_number,omitempty" gorm:"type:varchar(100)"`
+
     FirstName       string    `json:"first_name" gorm:"not null;type:varchar(100)"`
     LastName        string    `json:"last_name" gorm:"not null;type:varchar(100)"`
     MiddleName      string    `json:"middle_name,omitempty" gorm:"type:varchar(100)"`
@@ -25,21 +24,20 @@ type User struct {
     ContactNumber   string    `json:"contact_number,omitempty" gorm:"type:varchar(20)"`
     Address         string    `json:"address,omitempty" gorm:"type:text"`
 
-    ResetToken      string    `json:"-" gorm:"type:varchar(64)"`
+    ResetToken       string    `json:"-" gorm:"type:varchar(64)"`
     ResetTokenExpiry time.Time `json:"-" gorm:"type:timestamp"`
-    ResetAttempts   int       `json:"-" gorm:"default:0"`
+    ResetAttempts    int       `json:"-" gorm:"default:0"`
     LastResetRequest time.Time `json:"-" gorm:"type:timestamp"`
-    
-    QRCodeData      string    `json:"qr_code_data,omitempty" gorm:"type:text"`
-    QRCodeType      string    `json:"qr_code_type,omitempty" gorm:"type:varchar(50);default:'student_id'"`
+
+    QRCodeData       string    `json:"qr_code_data,omitempty" gorm:"type:text"`
+    QRCodeType       string    `json:"qr_code_type,omitempty" gorm:"type:varchar(50);default:'student_id'"`
 }
 
 type RegisterRequest struct {
+    UserID        string `json:"user_id" binding:"required"`
     Email         string `json:"email" binding:"required,email"`
     Password      string `json:"password" binding:"required,min=6"`
     Username      string `json:"username" binding:"required"`
-    
-    StudentNumber string `json:"student_number,omitempty"`
     FirstName     string `json:"first_name" binding:"required"`
     LastName      string `json:"last_name" binding:"required"`
     MiddleName    string `json:"middle_name,omitempty"`

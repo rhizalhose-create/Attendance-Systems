@@ -24,7 +24,7 @@ func createSuperAdmin() {
             IsVerified:    true,
             FirstName:     "Super",
             LastName:      "Admin",
-            StudentNumber: "ADMIN-001",
+
             Course:        "System Administration",
             YearLevel:     "N/A",
             Department:    "System Administration",

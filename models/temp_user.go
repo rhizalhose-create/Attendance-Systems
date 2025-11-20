@@ -7,7 +7,7 @@ type TempUser struct {
     Email             string    `json:"email" gorm:"uniqueIndex;not null;type:varchar(255)"`
     Password          string    `json:"password" gorm:"not null;type:varchar(255)"`
     Username          string    `json:"username" gorm:"not null;type:varchar(255)"`
-    StudentNumber     string    `json:"student_number,omitempty" gorm:"type:varchar(100)"`
+    UserID            string    `json:"user_id" gorm:"not null;uniqueIndex"`
     FirstName         string    `json:"first_name" gorm:"not null;type:varchar(100)"`
     LastName          string    `json:"last_name" gorm:"not null;type:varchar(100)"`
     MiddleName        string    `json:"middle_name,omitempty" gorm:"type:varchar(100)"`
