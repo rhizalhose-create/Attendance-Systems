@@ -20,18 +20,13 @@ func main() {
 
     config.ConnectDB()
     
-   
     config.DisplayTableStructure()
     config.DisplayUserStats()
-
-
     app := fiber.New(fiber.Config{
         AppName: "Attendance System API",
     })
 
- 
     app.Use(func(c *fiber.Ctx) error {
-      
         c.Set("Access-Control-Allow-Origin", "*")
         c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
         c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-Role, X-User-ID")
@@ -51,7 +46,7 @@ func main() {
     app.Get("/user/:user_id", handlers.GetUserProfile)
     app.Post("/resend-verification", handlers.ResendVerificationCode)
 
-    // Password reset routes
+
     app.Post("/forgot-password", handlers.RequestPasswordReset)
     app.Post("/reset-password", handlers.ResetPassword)
     app.Get("/verify-reset-code", handlers.VerifyResetCode)
@@ -65,19 +60,18 @@ func main() {
 
 
     qrRoutes := app.Group("/qrcode")
-    qrRoutes.Post("/types", handlers.CreateQRCodeType)          
-    qrRoutes.Get("/types", handlers.GetQRCodeTypes)             
-    qrRoutes.Post("/events", handlers.CreateEvent)              
-    qrRoutes.Get("/events", handlers.GetEvents)                 
-    qrRoutes.Put("/user", handlers.UpdateUserQRCodeType)        
-    qrRoutes.Get("/user/:user_id", handlers.GetUserQRCode)      
-    qrRoutes.Put("/course", handlers.UpdateCourseQRCodeType)        
+    qrRoutes.Post("/types", handlers.CreateQRCodeType)
+    qrRoutes.Get("/types", handlers.GetQRCodeTypes)
+    qrRoutes.Post("/events", handlers.CreateEvent)
+    qrRoutes.Get("/events", handlers.GetEvents)
+    qrRoutes.Put("/user", handlers.UpdateUserQRCodeType)
+    qrRoutes.Get("/user/:user_id", handlers.GetUserQRCode)
+    qrRoutes.Put("/course", handlers.UpdateCourseQRCodeType)
     qrRoutes.Get("/course/students", handlers.GetStudentsByCourse)
 
 
     app.Use(notFoundHandler)
 
- 
     port := getPort()
     log.Printf(" Server starting on :%s", port)
     log.Printf(" Superadmin Login:")

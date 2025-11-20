@@ -127,18 +127,17 @@ func VerifyEmail(c *fiber.Ctx) error {
         return c.Status(400).JSON(fiber.Map{"error": utils.ErrInvalidVerificationCodeOrEmail})
     }
 
-    log.Printf("📦 Found temp user: %s, Code: %s, Expires: %s", 
+    log.Printf(" Found temp user: %s, Code: %s, Expires: %s", 
         tempUser.Email, tempUser.VerificationCode, tempUser.ExpiresAt.Format(time.RFC3339))
 
-    // Check if verification code matches
+   
     if tempUser.VerificationCode != req.Code {
         log.Printf("❌ Code mismatch. Expected: %s, Got: %s", tempUser.VerificationCode, req.Code)
         return c.Status(400).JSON(fiber.Map{"error": utils.ErrInvalidVerifyCode})
     }
 
-    // Check if verification code has expired
     if time.Now().After(tempUser.ExpiresAt) {
-        log.Printf("❌ Verification code expired for: %s", req.Email)
+        log.Printf(" Verification code expired for: %s", req.Email)
         // Delete expired temporary user
         config.DB.Where(utils.QueryEmailWhere, req.Email).Delete(&models.TempUser{})
         delete(verificationCodes, req.Email)

@@ -9,7 +9,7 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     verified_at TIMESTAMP,
 
-    -- College fields
+
     student_number VARCHAR(100),
     first_name VARCHAR(100) NOT NULL DEFAULT '',
     last_name VARCHAR(100) NOT NULL DEFAULT '',
