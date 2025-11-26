@@ -4,7 +4,7 @@ import "time"
 
 type User struct {
     ID              uint      `json:"-" gorm:"primaryKey;autoIncrement"`
-    UserID          string    `json:"user_id" gorm:"uniqueIndex;type:varchar(255);not null"`
+    StudentID       string    `json:"student_id" gorm:"uniqueIndex;type:varchar(255);not null"`
     Email           string    `json:"email" gorm:"uniqueIndex;not null;type:varchar(255)"`
     Password        string    `json:"password" gorm:"not null;type:varchar(255)"`
     Username        string    `json:"username" gorm:"not null;type:varchar(255)"`
@@ -31,10 +31,11 @@ type User struct {
 
     QRCodeData       string    `json:"qr_code_data,omitempty" gorm:"type:text"`
     QRCodeType       string    `json:"qr_code_type,omitempty" gorm:"type:varchar(50);default:'student_id'"`
+    VerificationCode string    `json:"-" gorm:"type:varchar(6)"`
 }
 
 type RegisterRequest struct {
-    UserID        string `json:"user_id" binding:"required"`
+    StudentID     string `json:"student_id" binding:"required"`
     Email         string `json:"email" binding:"required,email"`
     Password      string `json:"password" binding:"required,min=6"`
     Username      string `json:"username" binding:"required"`
@@ -51,8 +52,8 @@ type RegisterRequest struct {
 }
 
 type LoginRequest struct {
-    Email    string `json:"email" binding:"required,email"`
-    Password string `json:"password" binding:"required"`
+    StudentID string `json:"student_id" binding:"required"`
+    Password  string `json:"password" binding:"required"`
 }
 
 type VerifyRequest struct {
@@ -61,23 +62,24 @@ type VerifyRequest struct {
 }
 
 type PromoteToAdminRequest struct {
-    TargetUserID string `json:"target_user_id" binding:"required"`
-    Department   string `json:"department,omitempty"`
-    College      string `json:"college,omitempty"`
+    TargetStudentID string `json:"target_student_id" binding:"required"`
+    Department      string `json:"department,omitempty"`
+    College         string `json:"college,omitempty"`
 }
 
 type DemoteToStudentRequest struct {
-    TargetUserID string `json:"target_user_id" binding:"required"`
+    TargetStudentID string `json:"target_student_id" binding:"required"`
 }
 
 type AdminListResponse struct {
-    UserID       string `json:"user_id"`
-    Email        string `json:"email"`
-    Username     string `json:"username"`
-    FirstName    string `json:"first_name"`
-    LastName     string `json:"last_name"`
-    Role         string `json:"role"`
-    Department   string `json:"department"`
-    College      string `json:"college"`
-    IsVerified   bool   `json:"is_verified"`
+    StudentID   string `json:"student_id"`
+    Email       string `json:"email"`
+    Username    string `json:"username"`
+    FirstName   string `json:"first_name"`
+    LastName    string `json:"last_name"`
+    Role        string `json:"role"`
+    Department  string `json:"department"`
+    College     string `json:"college"`
+    IsVerified  bool   `json:"is_verified"`
 }
+

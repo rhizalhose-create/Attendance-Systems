@@ -1,3 +1,5 @@
+//utils/verification.go
+
 package utils
 
 import (
@@ -6,17 +8,14 @@ import (
 	"time"
 )
 
-
 func GenerateVerificationCode() string {
 	rand.Seed(time.Now().UnixNano())
 	return fmt.Sprintf("%06d", rand.Intn(1000000))
 }
 
-
 func GenerateResetCode() string {
 	return GenerateVerificationCode()
 }
-
 
 func SendVerificationEmail(email, verificationCode string) error {
 	htmlBody := fmt.Sprintf(`

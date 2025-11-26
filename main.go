@@ -12,20 +12,20 @@ import (
 )
 
 func main() {
-
     if err := godotenv.Load(); err != nil {
         log.Println("  .env file not found, using system environment variables")
     }
-
 
     config.ConnectDB()
     
     config.DisplayTableStructure()
     config.DisplayUserStats()
+    
     app := fiber.New(fiber.Config{
         AppName: "Attendance System API",
     })
 
+    // CORS middleware
     app.Use(func(c *fiber.Ctx) error {
         c.Set("Access-Control-Allow-Origin", "*")
         c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
@@ -38,27 +38,24 @@ func main() {
         return c.Next()
     })
 
-  
+    // Health check
     app.Get("/health", healthCheck)
+
+    // Authentication routes
     app.Post("/register", handlers.Register)
     app.Post("/verify", handlers.VerifyEmail)
     app.Post("/login", handlers.Login)
-    app.Get("/user/:user_id", handlers.GetUserProfile)
     app.Post("/resend-verification", handlers.ResendVerificationCode)
 
-
+    // Password reset routes
     app.Post("/forgot-password", handlers.RequestPasswordReset)
     app.Post("/reset-password", handlers.ResetPassword)
-    app.Get("/verify-reset-code", handlers.VerifyResetCode)
-
-    adminRoutes := app.Group("/admin")
-    adminRoutes.Post("/promote", handlers.PromoteToAdmin)
-    adminRoutes.Post("/demote", handlers.DemoteToStudent)
-    adminRoutes.Get("/admins", handlers.GetAllAdmins)
-    adminRoutes.Get("/students", handlers.GetAllStudents)
-    adminRoutes.Delete("/cleanup-expired", handlers.CleanupExpiredRegistrations)
 
 
+    // User profile
+    app.Get("/user/:user_id", handlers.GetUserProfile)
+
+    // QR Code routes
     qrRoutes := app.Group("/qrcode")
     qrRoutes.Post("/types", handlers.CreateQRCodeType)
     qrRoutes.Get("/types", handlers.GetQRCodeTypes)
@@ -66,10 +63,8 @@ func main() {
     qrRoutes.Get("/events", handlers.GetEvents)
     qrRoutes.Put("/user", handlers.UpdateUserQRCodeType)
     qrRoutes.Get("/user/:user_id", handlers.GetUserQRCode)
-    qrRoutes.Put("/course", handlers.UpdateCourseQRCodeType)
-    qrRoutes.Get("/course/students", handlers.GetStudentsByCourse)
 
-
+    // 404 Handler
     app.Use(notFoundHandler)
 
     port := getPort()
@@ -79,11 +74,12 @@ func main() {
     log.Printf("    Password: superadmin123")
     log.Printf("    User ID: U2025-0000")
     
-
-    log.Printf(" Password Reset Endpoints:")
-    log.Printf("    POST /forgot-password - Request password reset with 6-digit code")
-    log.Printf("    POST /reset-password - Reset password with email and code")
-    log.Printf("    GET /verify-reset-code - Verify reset code")
+    log.Printf(" Essential Endpoints:")
+    log.Printf("    POST /register - User registration")
+    log.Printf("    POST /login - User login")
+    log.Printf("    POST /forgot-password - Request password reset")
+    log.Printf("    POST /reset-password - Reset password")
+    log.Printf("    GET /health - Health check")
     
     log.Fatal(app.Listen(":" + port))
 }

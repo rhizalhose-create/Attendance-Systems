@@ -1,3 +1,5 @@
+// models/qrcode.go
+
 package models
 
 import "time"
@@ -30,7 +32,7 @@ type QRCodeEvent struct {
 
 type QRCodeScan struct {
     ID          uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-    UserID      string    `json:"user_id" gorm:"type:varchar(255)"`
+    StudentID   string    `json:"student_id" gorm:"type:varchar(255)"`
     EventID     uint      `json:"event_id" gorm:"type:integer"`
     QRCodeType  string    `json:"qr_code_type" gorm:"type:varchar(100)"`
     ScannedAt   time.Time `json:"scanned_at" gorm:"autoCreateTime"`
@@ -44,7 +46,7 @@ type CreateQRCodeTypeRequest struct {
 }
 
 type UpdateUserQRCodeRequest struct {
-    UserID     string `json:"user_id" binding:"required"`
+    StudentID  string `json:"student_id" binding:"required"`
     QRCodeType string `json:"qr_code_type" binding:"required"`
 }
 

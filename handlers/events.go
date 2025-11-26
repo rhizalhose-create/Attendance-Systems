@@ -38,7 +38,7 @@
 		}
 
 		// Get user ID from context
-		userID := c.Get(utils.HeaderUserID)
+		userID := c.Get(utils.HeaderStudentID)
 
 		event := models.Event{
 			EventName:   req.EventName,
@@ -120,18 +120,18 @@
 	}
 
 	// GetEventByID - Get specific event by ID
-	func GetEventByID(c *fiber.Ctx) error {
-		eventID := c.Params("id")
+	// func GetEventByID(c *fiber.Ctx) error {
+	// 	eventID := c.Params("id")
 
-		var event models.Event
-		if err := config.DB.Where("id = ?", eventID).First(&event).Error; err != nil {
-			return c.Status(404).JSON(fiber.Map{"error": "Event not found"})
-		}
+	// 	var event models.Event
+	// 	if err := config.DB.Where("id = ?", eventID).First(&event).Error; err != nil {
+	// 		return c.Status(404).JSON(fiber.Map{"error": "Event not found"})
+	// 	}
 
-		return c.JSON(fiber.Map{
-			"event": event,
-		})
-	}
+	// 	return c.JSON(fiber.Map{
+	// 		"event": event,
+	// 	})
+	// }
 
 	// UpdateEvent - Update event (Admin/SuperAdmin only)
 	func UpdateEvent(c *fiber.Ctx) error {
@@ -218,7 +218,7 @@
 
 	// GetMyEvents - Get events created by current user
 	func GetMyEvents(c *fiber.Ctx) error {
-		userID := c.Get(utils.HeaderUserID)
+		userID := c.Get(utils.HeaderStudentID)
 		userRole := c.Get(utils.HeaderUserRole)
 
 		var events []models.Event
