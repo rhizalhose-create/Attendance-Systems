@@ -26,7 +26,7 @@ func PromoteToAdmin(c *fiber.Ctx) error {
 
     // Find target user
     var targetUser models.User
-    if err := config.DB.Where("user_id = ?", req.TargetUserID).First(&targetUser).Error; err != nil {
+    if err := config.DB.Where("student_id = ?", req.TargetStudentID).First(&targetUser).Error; err != nil {
         return c.Status(404).JSON(fiber.Map{"error": "User not found"})
     }
 
@@ -55,7 +55,7 @@ func PromoteToAdmin(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{
         "message": "User promoted to admin successfully",
         "user": fiber.Map{
-            "user_id":    targetUser.UserID,
+            "student_id": targetUser.StudentID,
             "email":      targetUser.Email,
             "username":   targetUser.Username,
             "role":       "admin",
@@ -74,7 +74,7 @@ func DemoteToStudent(c *fiber.Ctx) error {
 
     // Find target user
     var targetUser models.User
-    if err := config.DB.Where("user_id = ?", req.TargetUserID).First(&targetUser).Error; err != nil {
+    if err := config.DB.Where("student_id = ?", req.TargetStudentID).First(&targetUser).Error; err != nil {
         return c.Status(404).JSON(fiber.Map{"error": "User not found"})
     }
 
@@ -96,10 +96,10 @@ func DemoteToStudent(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{
         "message": "User demoted to student successfully",
         "user": fiber.Map{
-            "user_id":  targetUser.UserID,
-            "email":    targetUser.Email,
-            "username": targetUser.Username,
-            "role":     "student",
+            "student_id": targetUser.StudentID,
+            "email":      targetUser.Email,
+            "username":   targetUser.Username,
+            "role":       "student",
         },
     })
 }
@@ -115,15 +115,15 @@ func GetAllAdmins(c *fiber.Ctx) error {
     var adminList []models.AdminListResponse
     for _, admin := range admins {
         adminList = append(adminList, models.AdminListResponse{
-            UserID:     admin.UserID,
-            Email:      admin.Email,
-            Username:   admin.Username,
-            FirstName:  admin.FirstName,
-            LastName:   admin.LastName,
-            Role:       admin.Role,
-            Department: admin.Department,
-            College:    admin.College,
-            IsVerified: admin.IsVerified,
+            StudentID:   admin.StudentID,
+            Email:       admin.Email,
+            Username:    admin.Username,
+            FirstName:   admin.FirstName,
+            LastName:    admin.LastName,
+            Role:        admin.Role,
+            Department:  admin.Department,
+            College:     admin.College,
+            IsVerified:  admin.IsVerified,
         })
     }
 
@@ -132,7 +132,6 @@ func GetAllAdmins(c *fiber.Ctx) error {
         "count":  len(adminList),
     })
 }
-
 
 func GetAllStudents(c *fiber.Ctx) error {
     var students []models.User
@@ -144,7 +143,7 @@ func GetAllStudents(c *fiber.Ctx) error {
     var studentList []fiber.Map
     for _, student := range students {
         studentList = append(studentList, fiber.Map{
-            "user_id":       student.UserID,
+            "student_id":    student.StudentID,
             "email":         student.Email,
             "username":      student.Username,
             "first_name":    student.FirstName,

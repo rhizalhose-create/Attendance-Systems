@@ -26,6 +26,8 @@ func GetEmailConfig() *EmailConfig {
 		smtpHost = "smtp.gmail.com"
 	}
 
+	log.Printf("🔧 Email Config - Host: %s, Port: %d, Email: %s", smtpHost, 587, smtpEmail)
+	
 	return &EmailConfig{
 		SMTPEmail:    smtpEmail,
 		SMTPPassword: smtpPassword,
@@ -38,8 +40,16 @@ func GetEmailConfig() *EmailConfig {
 func SendEmail(to, subject, htmlBody string) error {
 	config := GetEmailConfig()
 
+	log.Printf(" Attempting to send email:")
+	log.Printf("   To: %s", to)
+	log.Printf("   Subject: %s", subject)
+	log.Printf("   From: %s", config.SMTPEmail)
+	log.Printf("   SMTP Host: %s:%d", config.SMTPHost, config.SMTPPort)
+
 	if config.SMTPEmail == "" || config.SMTPPassword == "" {
-		log.Printf(" Email credentials not set. Would send to %s: %s", to, subject)
+		log.Printf(" Email credentials not set!")
+		log.Printf("   SMTP_EMAIL: '%s'", config.SMTPEmail)
+		log.Printf("   SMTP_PASSWORD length: %d", len(config.SMTPPassword))
 		return fmt.Errorf("email service not configured")
 	}
 
@@ -51,11 +61,24 @@ func SendEmail(to, subject, htmlBody string) error {
 
 	d := gomail.NewDialer(config.SMTPHost, config.SMTPPort, config.SMTPEmail, config.SMTPPassword)
 
+	log.Printf(" Testing SMTP connection...")
+	
+	// Test the connection first
+	var s gomail.SendCloser
+	var err error
+	if s, err = d.Dial(); err != nil {
+		log.Printf(" SMTP Connection FAILED: %v", err)
+		return fmt.Errorf("SMTP connection failed: %v", err)
+	}
+	defer s.Close()
+	log.Printf(" SMTP Connection SUCCESSFUL")
+
+	log.Printf(" Sending email...")
 	if err := d.DialAndSend(m); err != nil {
 		log.Printf(" Failed to send email to %s: %v", to, err)
 		return fmt.Errorf("failed to send email: %v", err)
 	}
 
-	log.Printf(" Email sent to %s", to)
+	log.Printf(" Email sent successfully to %s", to)
 	return nil
 }

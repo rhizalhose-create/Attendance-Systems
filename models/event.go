@@ -1,3 +1,5 @@
+// models/event.go
+
 package models
 
 import "time"

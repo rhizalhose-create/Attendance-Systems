@@ -1,10 +1,12 @@
+//utils/conttants.gp
+
 package utils
 
 // Constants for error messages, headers and queries
 const (
     // Error messages - Auth
     ErrCannotParseJSON              = "Cannot parse JSON"
-    ErrInvalidEmailPass             = "Invalid email or password"
+    ErrInvalidStudentIDPass         = "Invalid student ID or password"
     ErrUserNotFound                 = "User not found"
     ErrUserExists                   = "User already exists"
     ErrEmailPassRequired            = "Email, password, and username are required"
@@ -24,12 +26,16 @@ const (
     ErrAdminAccessRequired          = "Admin access required"
     ErrFailedCleanupRegistrations   = "Failed to clean up expired registrations"
     
-    // Error messages - Password Reset
+    // Error messages - Password Reset (UPDATED FOR STUDENT ID FLOW)
     ErrEmailRequired                = "Email is required"
+    ErrStudentIDRequired            = "Student ID is required" // NEW
     ErrUserNotFoundForEmail         = "No user found with this email"
+    ErrUserNotFoundForStudentID     = "No user found with this Student ID" // NEW
     ErrResetTokenInvalid            = "Invalid or expired reset token"
     ErrResetTokenExpired            = "Reset token has expired"
     ErrPasswordRequired             = "New password is required"
+    ErrConfirmPasswordRequired      = "Confirm password is required" // NEW
+    ErrPasswordsDoNotMatch          = "Passwords do not match" // NEW
     ErrPasswordTooShort             = "Password must be at least 6 characters"
     ErrResetAttemptsExceeded        = "Too many reset attempts. Please try again later."
     ErrFailedToProcessReset         = "Failed to process password reset request"
@@ -54,15 +60,16 @@ const (
     ErrFailedToDeleteEvent          = "Failed to delete event"
 
     
-    // Success messages
+    // Success messages (UPDATED FOR STUDENT ID FLOW)
     MsgResetEmailSent               = "Password reset email sent successfully"
+    MsgResetLinkSent                = "Password reset link sent successfully" // NEW
     MsgPasswordResetSuccess         = "Password reset successfully"
     MsgResetTokenValid              = "Reset token is valid"
     MsgEventCreated                 = "Event created successfully"
     MsgEventUpdated                 = "Event updated successfully"
     MsgEventDeleted                 = "Event deleted successfully"
     
-    // Log messages
+    // Log messages (UPDATED FOR STUDENT ID FLOW)
     LogEventCreated                 = "Event created successfully: %s by %s"
     LogEventUpdated                 = "Event updated successfully: %s"
     LogEventDeleted                 = "Event deleted successfully: %s"
@@ -70,14 +77,17 @@ const (
     LogFailedToUpdateEvent          = "Failed to update event: %v"
     LogFailedToDeleteEvent          = "Failed to delete event: %v"
     LogFailedToFetchEvents          = "Failed to fetch events: %v"
+    LogResetRequestedStudentID      = "Password reset requested for Student ID: %s - Email: %s - Token: %s" // NEW
+    LogResetSuccessfulStudentID     = "Password reset successful for Student ID: %s" // NEW
+    LogInvalidResetTokenStudentID   = "Invalid or expired reset token for Student ID %s: %s" // NEW
     
     // Header names
-    HeaderUserRole = "X-User-Role"
-    HeaderUserID   = "X-User-ID"
+    HeaderUserRole   = "X-User-Role"
+    HeaderStudentID  = "X-Student-ID"
     
-    // Query constants
+    // Query constants (UPDATED FOR STUDENT ID FLOW)
     QueryEmailWhere        = "email = ?"
-    QueryUserIDWhere       = "user_id = ?"
+    QueryStudentIDWhere    = "student_id = ?"
     QueryVerificationCode  = "verification_code = ?"
     QueryTypeNameWhere     = "type_name = ?"
     QueryIsActive          = "is_active = ?"
@@ -86,13 +96,11 @@ const (
     QueryRoleWhere         = "role = ?"
     QueryResetTokenWhere   = "reset_token = ?"
     
-    // Combined queries
+    // Combined queries (UPDATED FOR STUDENT ID FLOW)
     QueryTypeNameAndActive = "type_name = ? AND is_active = ?"
     QueryCourseYearRole    = "course = ? AND year_level = ? AND role = ?"
     QueryActiveAndEndTime  = "is_active = ? AND end_time > ?"
     QueryResetTokenValid   = "reset_token = ? AND reset_token_expiry > ?"
-
-
-
-    QueryEventIDWhere = "id = ?"
+    QueryEventIDWhere      = "id = ?"
+    QueryStudentIDResetToken = "student_id = ? AND reset_token = ? AND reset_token_expiry > ?" // NEW
 )

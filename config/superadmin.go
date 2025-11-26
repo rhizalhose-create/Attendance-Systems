@@ -16,7 +16,7 @@ func createSuperAdmin() {
         hash, _ := bcrypt.GenerateFromPassword([]byte("superadmin123"), 14)
         
         superAdmin := models.User{
-            UserID:        "U2025-0000",
+            StudentID:        "U2025-0000",
             Email:         "superadmin@system.com",
             Password:      string(hash),
             Username:      "superadmin",
