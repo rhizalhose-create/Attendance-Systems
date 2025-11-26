@@ -192,7 +192,7 @@ func completeVerification(email string, c *fiber.Ctx) error {
     log.Printf("User verification completed successfully: %s", customStudentID)
 
     return c.JSON(fiber.Map{
-        "message":          "Email verified successfully! Your account has been created.",
+        "message":          "Email verified succexssfully! Your account has been created.",
         "student_id":       customStudentID,
         "qr_code_generated": qrErr == nil,
         "student_info": fiber.Map{

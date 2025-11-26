@@ -34,8 +34,10 @@ type User struct {
     VerificationCode string    `json:"-" gorm:"type:varchar(6)"`
 }
 
+// models/user.go
 type RegisterRequest struct {
-    StudentID     string `json:"student_id" binding:"required"`
+   
+    StudentID     string `json:"student_id,omitempty"`
     Email         string `json:"email" binding:"required,email"`
     Password      string `json:"password" binding:"required,min=6"`
     Username      string `json:"username" binding:"required"`
