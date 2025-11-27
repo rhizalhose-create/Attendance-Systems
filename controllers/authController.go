@@ -4,8 +4,8 @@ import (
     "AttendanceManagementSystem/config"
     "AttendanceManagementSystem/models"
     "AttendanceManagementSystem/utils"
-    "time" 
     "log"
+    "time"
 
     "github.com/gofiber/fiber/v2"
     "golang.org/x/crypto/bcrypt"
@@ -24,54 +24,56 @@ func Register(c *fiber.Ctx) error {
     }
 
     if req.Email == "" || req.Password == "" || req.Username == "" {
-        return c.Status(400).JSON(fiber.Map{"error": "Email, password, and username are required"})
+        return c.Status(400).JSON(fiber.Map{
+            "error": "Email, password, and username are required",
+        })
     }
 
+    // Check if email already exists in USERS table
     var existingUser models.User
     if err := config.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
         return c.Status(400).JSON(fiber.Map{"error": "User already exists"})
     }
 
+    // Check if email already exists in TEMP_USERS table
+    var existingTemp models.TempUser
+    if err := config.DB.Where("email = ?", req.Email).First(&existingTemp).Error; err == nil {
+        return c.Status(400).JSON(fiber.Map{"error": "Email already registered but not verified"})
+    }
+
+    // Hash password
     hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 14)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
     }
 
-    // FIX 1: GENERATE STUDENT ID FIRST
-    var lastUser models.User
-    config.DB.Order("id DESC").First(&lastUser)
-    
-    nextID := uint(1)
-    if lastUser.ID > 0 {
-        nextID = lastUser.ID + 1
-    }
-    
-    customStudentID := utils.GenerateCustomStudentID(nextID)
-    log.Printf("🎯 Generating Student ID: %s for new user", customStudentID)
+    // Generate verification code
+    verificationCode := utils.GenerateVerificationCode() // auto 6-digit or whatever your utils provides
 
-    // FIX 2: CREATE USER WITH STUDENT ID ALREADY SET
-    user := models.User{
-        StudentID:   customStudentID, // SET STUDENT ID HERE
-        Email:       req.Email,
-        Password:    string(hash),
-        Username:    req.Username,
-        IsVerified:  false,
-        CreatedAt:   time.Now(), 
+    // Generate expiration (5 mins)
+    expiresAt := time.Now().Add(5 * time.Minute)
+
+    tempUser := models.TempUser{
+        Email:            req.Email,
+        Password:         string(hash),
+        Username:         req.Username,
+        VerificationCode: verificationCode,
+        ExpiresAt:        expiresAt,
+        CreatedAt:        time.Now(),
     }
 
-    // FIX 3: CREATE USER WITH STUDENT ID
-    result := config.DB.Create(&user)
-    if result.Error != nil {
-        log.Printf("❌ Failed to create user: %v", result.Error)
-        return c.Status(500).JSON(fiber.Map{"error": result.Error.Error()})
+    if err := config.DB.Create(&tempUser).Error; err != nil {
+        log.Printf("❌ Failed to create temp user: %v", err)
+        return c.Status(500).JSON(fiber.Map{"error": err.Error()})
     }
 
-    log.Printf("✅ User registered successfully: %s (Student ID: %s)", user.Email, user.StudentID)
+    // Send the verification code via email or logs
+    log.Printf("📧 Sending verification code '%s' to %s", verificationCode, tempUser.Email)
 
     return c.JSON(fiber.Map{
-        "message": "User registered successfully",
-        "student_id": customStudentID,
-        "db_id":   user.ID,      
+        "message":      "Verification code sent to your email",
+        "temp_user_id": tempUser.ID,
+        "expires_at":   expiresAt,
     })
 }
 
@@ -86,25 +88,18 @@ func Login(c *fiber.Ctx) error {
         return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
     }
 
-    // ADD DEBUG LOGGING
     log.Printf("🔍 LOGIN ATTEMPT - Student ID: '%s'", req.StudentID)
 
     var user models.User
     if err := config.DB.Where("student_id = ?", req.StudentID).First(&user).Error; err != nil {
-        log.Printf("❌ STUDENT NOT FOUND - ID: '%s', Error: %v", req.StudentID, err)
-        
-        // Debug: List all student IDs
-        var allUsers []models.User
-        config.DB.Select("student_id, email").Find(&allUsers)
-        log.Printf("📋 ALL STUDENT IDs IN DATABASE:")
-        for _, u := range allUsers {
-            log.Printf("   - %s (Email: %s)", u.StudentID, u.Email)
-        }
-        
+        log.Printf("❌ STUDENT NOT FOUND - ID: '%s'", req.StudentID)
         return c.Status(401).JSON(fiber.Map{"error": "Invalid student ID or password"})
     }
 
-    log.Printf("✅ STUDENT FOUND - ID: '%s', Email: %s", user.StudentID, user.Email)
+    // Must be verified first
+    if !user.IsVerified {
+        return c.Status(403).JSON(fiber.Map{"error": "Account not verified"})
+    }
 
     // Check password
     if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
@@ -113,7 +108,7 @@ func Login(c *fiber.Ctx) error {
 
     return c.JSON(fiber.Map{
         "message":    "Login successful",
-        "student_id": user.StudentID, 
+        "student_id": user.StudentID,
         "email":      user.Email,
         "username":   user.Username,
     })

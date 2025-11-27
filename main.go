@@ -13,7 +13,7 @@ import (
 
 func main() {
     if err := godotenv.Load(); err != nil {
-        log.Println("  .env file not found, using system environment variables")
+        log.Println(".env file not found, using system environment variables")
     }
 
     config.ConnectDB()
@@ -25,7 +25,7 @@ func main() {
         AppName: "Attendance System API",
     })
 
-    // CORS middleware
+    // CORS middleware (existing code stays)
     app.Use(func(c *fiber.Ctx) error {
         c.Set("Access-Control-Allow-Origin", "*")
         c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
@@ -46,11 +46,11 @@ func main() {
     app.Post("/verify", handlers.VerifyEmail)
     app.Post("/login", handlers.Login)
     app.Post("/resend-verification", handlers.ResendVerificationCode)
+    
 
     // Password reset routes
     app.Post("/forgot-password", handlers.RequestPasswordReset)
     app.Post("/reset-password", handlers.ResetPassword)
-
 
     // User profile
     app.Get("/user/:user_id", handlers.GetUserProfile)
@@ -68,13 +68,13 @@ func main() {
     app.Use(notFoundHandler)
 
     port := getPort()
-    log.Printf(" Server starting on :%s", port)
-    log.Printf(" Superadmin Login:")
+    log.Printf("Server starting on :%s", port)
+    log.Printf("Superadmin Login:")
     log.Printf("    Email: superadmin@system.com")
     log.Printf("    Password: superadmin123")
     log.Printf("    User ID: U2025-0000")
     
-    log.Printf(" Essential Endpoints:")
+    log.Printf("Essential Endpoints:")
     log.Printf("    POST /register - User registration")
     log.Printf("    POST /login - User login")
     log.Printf("    POST /forgot-password - Request password reset")
@@ -84,7 +84,7 @@ func main() {
     log.Fatal(app.Listen(":" + port))
 }
 
-// Health check endpoint
+// Health check endpoint (existing)
 func healthCheck(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{
         "status":    "OK",
@@ -94,7 +94,7 @@ func healthCheck(c *fiber.Ctx) error {
     })
 }
 
-// 404 Handler
+// 404 Handler (existing)
 func notFoundHandler(c *fiber.Ctx) error {
     return c.Status(404).JSON(fiber.Map{
         "error":   "Endpoint not found",
@@ -104,10 +104,10 @@ func notFoundHandler(c *fiber.Ctx) error {
     })
 }
 
-// Get port from environment or default
+// Get port from environment or default (existing)
 func getPort() string {
     if port := os.Getenv("SERVER_PORT"); port != "" {
         return port
     }
-    return "8080"
+    return "9090"
 }

@@ -4,6 +4,7 @@ package config
 import "gorm.io/gorm"
 
 
+
 func GetDB() *gorm.DB {
     return DB
 }
@@ -15,7 +16,7 @@ func InitDatabase() {
 
 func ShowTableStructure() {
     DisplayTableStructure()
-}
+}   
 
 func ShowUserStats() {
     DisplayUserStats()
