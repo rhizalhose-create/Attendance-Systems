@@ -49,6 +49,7 @@ func main() {
 
     // Password reset routes
     app.Post("/forgot-password", handlers.RequestPasswordReset)
+    app.Post("/verify-reset-code", handlers.VerifyResetCode)
     app.Post("/reset-password", handlers.ResetPassword)
 
 
@@ -62,6 +63,7 @@ func main() {
     qrRoutes.Post("/events", handlers.CreateEvent)
     qrRoutes.Get("/events", handlers.GetEvents)
     qrRoutes.Put("/user", handlers.UpdateUserQRCodeType)
+
     qrRoutes.Get("/user/:user_id", handlers.GetUserQRCode)
 
     // 404 Handler
@@ -104,7 +106,7 @@ func notFoundHandler(c *fiber.Ctx) error {
     })
 }
 
-// Get port from environment or default
+
 func getPort() string {
     if port := os.Getenv("SERVER_PORT"); port != "" {
         return port
