@@ -49,6 +49,44 @@ func CreateQRCodeType(c *fiber.Ctx) error {
     })
 }
 
+
+// In handlers/qrcode.go - add this function
+func DebugQRCodeTypes(c *fiber.Ctx) error {
+    studentID := c.Query("student_id")
+    
+    if studentID != "" {
+        // Debug specific student
+        var user models.User
+        if err := config.DB.Where("student_id = ?", studentID).First(&user).Error; err != nil {
+            return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+        }
+        
+        return c.JSON(fiber.Map{
+            "student_id": user.StudentID,
+            "qr_code_type": user.QRCodeType,
+            "qr_code_data_length": len(user.QRCodeData),
+            "course": user.Course,
+            "year_level": user.YearLevel,
+        })
+    }
+    
+    // Get QR code type distribution
+    var typeDistribution []struct {
+        QRCodeType string `json:"qr_code_type"`
+        Count      int    `json:"count"`
+    }
+    
+    config.DB.Model(&models.User{}).
+        Select("qr_code_type, count(*) as count").
+        Group("qr_code_type").
+        Scan(&typeDistribution)
+    
+    return c.JSON(fiber.Map{
+        "qr_code_type_distribution": typeDistribution,
+        "total_users": len(typeDistribution),
+    })
+}
+
 // UpdateUserQRCodeType - Admin/SuperAdmin can update user's QR code type
 func UpdateUserQRCodeType(c *fiber.Ctx) error {
     var req models.UpdateUserQRCodeRequest

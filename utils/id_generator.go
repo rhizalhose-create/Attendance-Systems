@@ -3,7 +3,6 @@
 package utils
 
 import (
-    "crypto/rand"  
     "fmt"
     "strings"
     "time"
@@ -34,19 +33,4 @@ func GenerateCustomStudentIDWithCourse(dbID uint, course string) string {
     }
     
     return fmt.Sprintf("%s%s-%04d", coursePrefix, year, dbID)
-}
-
-func generateRandomString(length int) string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    bytes := make([]byte, length)
-    
-    if _, err := rand.Read(bytes); err != nil {
-        return fmt.Sprintf("%d", time.Now().UnixNano())[:length]
-    }
-    
-    for i, b := range bytes {
-        bytes[i] = chars[b%byte(len(chars))]
-    }
-    
-    return strings.ToUpper(string(bytes))
 }

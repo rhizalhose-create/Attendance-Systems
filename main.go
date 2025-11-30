@@ -1,14 +1,15 @@
 package main
 
 import (
-    "log"
-    "AttendanceManagementSystem/config"
-    "AttendanceManagementSystem/handlers"
-    "os"
-    "time"
+	"log"
+	"os"
+	"time"
 
-    "github.com/gofiber/fiber/v2"
-    "github.com/joho/godotenv"
+	"AttendanceManagementSystem/config"
+	"AttendanceManagementSystem/handlers"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -16,14 +17,14 @@ func main() {
         log.Println(".env file not found, using system environment variables")
     }
 
-    config.ConnectDB()
-    
-    config.DisplayTableStructure()
-    config.DisplayUserStats()
-    
-    app := fiber.New(fiber.Config{
-        AppName: "Attendance System API",
-    })
+	config.ConnectDB()
+	
+	config.DisplayTableStructure()
+	config.DisplayUserStats()
+	
+	app := fiber.New(fiber.Config{
+		AppName: "Attendance System API",
+	})
 
     // CORS middleware (existing code stays)
     app.Use(func(c *fiber.Ctx) error {
@@ -38,8 +39,11 @@ func main() {
         return c.Next()
     })
 
-    // Health check
-    app.Get("/health", healthCheck)
+	// Health check
+	app.Get("/health", healthCheck)
+	app.Get("/debug/qr-types", handlers.DebugQRCodeTypes)
+	app.Get("", handlers.ResetAllQRCodesToDefault)
+	app.Get("/events/reset-qr-simple", handlers.QuickResetAllQRCodes)
 
     // Authentication routes
     app.Post("/register", handlers.Register)
@@ -48,26 +52,30 @@ func main() {
     app.Post("/resend-verification", handlers.ResendVerificationCode)
     
 
-    // Password reset routes
-    app.Post("/forgot-password", handlers.RequestPasswordReset)
-    app.Post("/verify-reset-code", handlers.VerifyResetCode)
-    app.Post("/reset-password", handlers.ResetPassword)
+	// Password reset routes
+	app.Post("/forgot-password", handlers.RequestPasswordReset)
+	app.Post("/verify-reset-code", handlers.VerifyResetCode)
+	app.Post("/reset-password", handlers.ResetPassword)
 
     // User profile
     app.Get("/user/:user_id", handlers.GetUserProfile)
 
-    // QR Code routes
-    qrRoutes := app.Group("/qrcode")
-    qrRoutes.Post("/types", handlers.CreateQRCodeType)
-    qrRoutes.Get("/types", handlers.GetQRCodeTypes)
-    qrRoutes.Post("/events", handlers.CreateEvent)
-    qrRoutes.Get("/events", handlers.GetEvents)
-    qrRoutes.Put("/user", handlers.UpdateUserQRCodeType)
+	// Event Management Routes - Use the new handler names
+	eventRoutes := app.Group("/events")
+	eventRoutes.Post("/", handlers.CreateEventHandler)      // Changed
+	eventRoutes.Get("/", handlers.GetEventsHandler)         // Changed  
+	eventRoutes.Get("/:id", handlers.GetEventByIDHandler)   // Changed
+	eventRoutes.Put("/:id", handlers.UpdateEventHandler)    // Changed
+	eventRoutes.Delete("/:id", handlers.DeleteEventHandler) // Changed
+	eventRoutes.Get("/options/available", handlers.GetAvailableOptions) // Get dropdown options
+eventRoutes.Get("/:id/students", handlers.GetEventStudents)        // Get affected students
+eventRoutes.Post("/:id/refresh-qr", handlers.RefreshEventQRCodes)  // Refresh QR codes
 
-    qrRoutes.Get("/user/:user_id", handlers.GetUserQRCode)
+	// User-specific events
+	app.Get("/my-events", handlers.GetMyEventsHandler) // Changed
 
-    // 404 Handler
-    app.Use(notFoundHandler)
+	// 404 Handler
+	app.Use(notFoundHandler)
 
     port := getPort()
     log.Printf("Server starting on :%s", port)
@@ -88,22 +96,22 @@ func main() {
 
 // Health check endpoint (existing)
 func healthCheck(c *fiber.Ctx) error {
-    return c.JSON(fiber.Map{
-        "status":    "OK",
-        "timestamp": time.Now().Format(time.RFC3339),
-        "service":   "Attendance System API",
-        "version":   "1.0.0",
-    })
+	return c.JSON(fiber.Map{
+		"status":    "OK",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"service":   "Attendance System API",
+		"version":   "1.0.0",
+	})
 }
 
 // 404 Handler (existing)
 func notFoundHandler(c *fiber.Ctx) error {
-    return c.Status(404).JSON(fiber.Map{
-        "error":   "Endpoint not found",
-        "path":    c.Path(),
-        "method":  c.Method(),
-        "message": "Check the API documentation for available endpoints",
-    })
+	return c.Status(404).JSON(fiber.Map{
+		"error":   "Endpoint not found",
+		"path":    c.Path(),
+		"method":  c.Method(),
+		"message": "Check the API documentation for available endpoints",
+	})
 }
 
 // Get port from environment or default

@@ -1,4 +1,4 @@
-
+// config/config.go
 package config
 
 import "gorm.io/gorm"

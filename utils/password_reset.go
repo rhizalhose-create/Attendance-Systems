@@ -418,7 +418,7 @@ func SendVerificationCodeEmail(email, code, studentID string) error {
         </p>
         
         <div class="security-notice">
-          <div class="security-text">🔒 Your security is our priority. This code ensures only you can reset your password.</div>
+          <div class="security-text"> Your security is our priority. This code ensures only you can reset your password.</div>
         </div>
       </div>
     </div>
@@ -427,10 +427,10 @@ func SendVerificationCodeEmail(email, code, studentID string) error {
 </html>
 `, studentID, currentTime, code)
 
-    log.Printf("📧 UTILS - Sending password reset email to: %s", email)
-    log.Printf("📧 UTILS - Student ID: %s", studentID)
-    log.Printf("📧 UTILS - Verification Code: %s", code)
-    log.Printf("📧 UTILS - Request Time: %s", currentTime)
+    log.Printf(" UTILS - Sending password reset email to: %s", email)
+    log.Printf(" UTILS - Student ID: %s", studentID)
+    log.Printf(" UTILS - Verification Code: %s", code)
+    log.Printf(" UTILS - Request Time: %s", currentTime)
 
     return SendEmail(email, "Reset Your Password • Attendify", htmlBody)
 }
