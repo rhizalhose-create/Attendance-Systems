@@ -1,4 +1,4 @@
-// handlers/password-reset.go - COMPLETE UPDATED VERSION
+// handlers/password-reset.go
 package handlers
 
 import (
@@ -12,7 +12,11 @@ import (
     "golang.org/x/crypto/bcrypt"
 )
 
-// RequestPasswordReset - Step 1: Request password reset with Student ID (sends 6-digit code)
+const (
+    ErrCannotParseJSON     = "Cannot parse JSON"
+    ErrStudentIDRequired   = "Student ID is required"
+)
+
 func RequestPasswordReset(c *fiber.Ctx) error {
     type Request struct {
         StudentID string `json:"student_id"`
@@ -20,72 +24,81 @@ func RequestPasswordReset(c *fiber.Ctx) error {
 
     var req Request
     if err := c.BodyParser(&req); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
+        return c.Status(400).JSON(fiber.Map{"error": ErrCannotParseJSON})
     }
 
     if req.StudentID == "" {
-        return c.Status(400).JSON(fiber.Map{"error": "Student ID is required"})
+        return c.Status(400).JSON(fiber.Map{"error": ErrStudentIDRequired})
     }
 
-    // Find user by Student ID
     var user models.User
     if err := config.DB.Where("student_id = ?", req.StudentID).First(&user).Error; err != nil {
-        // Return success even if user not found for security
-        log.Printf(" User not found for password reset - Student ID: %s", req.StudentID)
         return c.JSON(fiber.Map{
             "success": true,
             "message": "If the Student ID exists, a verification code will be sent to your registered email",
         })
     }
 
-    // Check if user is verified
     if !user.IsVerified {
         return c.Status(400).JSON(fiber.Map{"error": "Please verify your email first before resetting password"})
     }
 
-    // Check reset attempts (prevent abuse)
-    if user.ResetAttempts >= 5 && time.Since(user.LastResetRequest) < time.Hour {
-        return c.Status(429).JSON(fiber.Map{"error": "Too many reset attempts. Please try again later."})
+    var existingReset models.PasswordReset
+    if err := config.DB.Where("student_id = ? AND used = ?", req.StudentID, false).First(&existingReset).Error; err == nil {
+        if time.Until(existingReset.ExpiresAt) > 0 {
+            return c.Status(400).JSON(fiber.Map{
+                "error": "Reset request already pending. Please check your email or wait for it to expire.",
+            })
+        } else {
+            config.DB.Delete(&existingReset)
+        }
     }
 
-    // Generate 6-digit verification code
     verificationCode := utils.GenerateSixDigitCode()
     resetToken := utils.GenerateResetToken()
-    resetTokenExpiry := time.Now().Add(10 * time.Minute) // Code valid for 10 minutes
+    expiresAt := time.Now().Add(10 * time.Minute)
 
-    // Update user with reset token and verification code
-    updates := map[string]interface{}{
-        "reset_token":         resetToken,
-        "reset_token_expiry":  resetTokenExpiry,
-        "reset_attempts":      user.ResetAttempts + 1,
-        "last_reset_request":  time.Now(),
-        "verification_code":   verificationCode, // Store the 6-digit code
+    if resetToken == "" {
+        resetToken = "fallback_token_" + verificationCode
     }
 
-    if err := config.DB.Model(&user).Updates(updates).Error; err != nil {
-        log.Printf(" Failed to set reset token for Student ID %s: %v", req.StudentID, err)
+    passwordReset := models.PasswordReset{
+        StudentID:        req.StudentID,
+        Email:            user.Email,
+        VerificationCode: verificationCode,
+        Token:            resetToken,
+        ExpiresAt:        expiresAt,
+        Used:             false,
+        CreatedAt:        time.Now(),
+    }
+
+    if err := config.DB.Create(&passwordReset).Error; err != nil {
+        log.Printf("Failed to create password reset entry: %v", err)
         return c.Status(500).JSON(fiber.Map{"error": "Failed to process reset request"})
     }
 
-    // Send email with 6-digit verification code
-    if err := utils.SendVerificationCodeEmail(user.Email, verificationCode, user.StudentID); err != nil {
-        log.Printf("⚠️ Failed to send verification code email to %s (Student ID: %s): %v", user.Email, req.StudentID, err)
-        return c.Status(500).JSON(fiber.Map{"error": "Failed to send verification code"})
+    // Verify the entry was saved correctly
+    var savedReset models.PasswordReset
+    if err := config.DB.Where("student_id = ? AND verification_code = ?", req.StudentID, verificationCode).First(&savedReset).Error; err != nil {
+        log.Printf("CRITICAL: Could not find saved reset entry: %v", err)
+    } else {
+        log.Printf("Password reset entry saved - ID: %d, Code: %s, Token: %s", savedReset.ID, savedReset.VerificationCode, savedReset.Token)
     }
 
-    log.Printf(" Password reset requested for Student ID: %s - Email: %s - Code: %s", req.StudentID, user.Email, verificationCode)
+    if err := utils.SendVerificationCodeEmail(user.Email, verificationCode, user.StudentID); err != nil {
+        log.Printf("Failed to send verification email: %v", err)
+        return c.Status(500).JSON(fiber.Map{"error": "Failed to send verification code"})
+    }
 
     return c.JSON(fiber.Map{
         "success":     true,
         "message":    "6-digit verification code sent to your email",
-        "note":       "Check your registered email for the verification code",
         "email":      user.Email,
         "student_id": user.StudentID,
         "expires_in": "10 minutes",
     })
 }
 
-// VerifyResetCode - Step 2: Verify the 6-digit code
 func VerifyResetCode(c *fiber.Ctx) error {
     type Request struct {
         StudentID string `json:"student_id"`
@@ -94,37 +107,77 @@ func VerifyResetCode(c *fiber.Ctx) error {
 
     var req Request
     if err := c.BodyParser(&req); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
+        log.Printf("VerifyResetCode - JSON parse error: %v", err)
+        return c.Status(400).JSON(fiber.Map{"error": ErrCannotParseJSON})
     }
 
     if req.StudentID == "" {
-        return c.Status(400).JSON(fiber.Map{"error": "Student ID is required"})
+        log.Printf("VerifyResetCode - Student ID is empty")
+        return c.Status(400).JSON(fiber.Map{"error": ErrStudentIDRequired})
     }
 
     if req.Code == "" {
+        log.Printf("VerifyResetCode - Code is empty for Student ID: %s", req.StudentID)
         return c.Status(400).JSON(fiber.Map{"error": "Verification code is required"})
     }
 
-    // Find user by Student ID and check verification code
-    var user models.User
-    if err := config.DB.Where("student_id = ? AND verification_code = ? AND reset_token_expiry > ?", 
-        req.StudentID, req.Code, time.Now()).First(&user).Error; err != nil {
-        log.Printf(" Invalid verification code for Student ID %s: %s", req.StudentID, req.Code)
-        return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired verification code"})
+    log.Printf("VerifyResetCode - Searching for Student ID: %s, Code: %s", req.StudentID, req.Code)
+
+    // First, check what entries exist for this student
+    var allResets []models.PasswordReset
+    config.DB.Where("student_id = ?", req.StudentID).Find(&allResets)
+    log.Printf("VerifyResetCode - Found %d reset entries for student", len(allResets))
+    
+    for i, reset := range allResets {
+        log.Printf("VerifyResetCode - Entry %d: Code=%s, Token=%s, Used=%v, Expires=%v", 
+            i+1, reset.VerificationCode, reset.Token, reset.Used, reset.ExpiresAt)
     }
 
-    // Return the reset token for the next step
+    var passwordReset models.PasswordReset
+    err := config.DB.Where("student_id = ? AND verification_code = ? AND used = ? AND expires_at > ?", 
+        req.StudentID, req.Code, false, time.Now()).First(&passwordReset).Error
+
+    if err != nil {
+        log.Printf("VerifyResetCode - Query failed: %v", err)
+        log.Printf("VerifyResetCode - Query: student_id=%s, code=%s, used=false, expires_at>%v", 
+            req.StudentID, req.Code, time.Now())
+        
+        // Try simpler query without expiration check
+        var simpleReset models.PasswordReset
+        if simpleErr := config.DB.Where("student_id = ? AND verification_code = ?", req.StudentID, req.Code).First(&simpleReset).Error; simpleErr == nil {
+            log.Printf("VerifyResetCode - Found with simple query but: Used=%v, Expired=%v", 
+                simpleReset.Used, time.Now().After(simpleReset.ExpiresAt))
+            
+            if simpleReset.Used {
+                return c.Status(400).JSON(fiber.Map{"error": "This verification code has already been used"})
+            }
+            if time.Now().After(simpleReset.ExpiresAt) {
+                return c.Status(400).JSON(fiber.Map{"error": "This verification code has expired"})
+            }
+        }
+        
+        return c.Status(400).JSON(fiber.Map{"error": "Invalid verification code"})
+    }
+
+    log.Printf("VerifyResetCode - Found valid reset: Token=%s", passwordReset.Token)
+
+    if passwordReset.Token == "" {
+        log.Printf("VerifyResetCode - Token is empty")
+        return c.Status(500).JSON(fiber.Map{"error": "Reset token not generated properly"})
+    }
+
+    log.Printf("VerifyResetCode - Verification successful")
+
     return c.JSON(fiber.Map{
         "success":     true,
         "message":     "Verification code verified successfully",
-        "token":       user.ResetToken,
-        "email":       user.Email,
-        "student_id":  user.StudentID,
-        "expires_in":  time.Until(user.ResetTokenExpiry).Round(time.Minute).String(),
+        "token":       passwordReset.Token,
+        "email":       passwordReset.Email,
+        "student_id":  passwordReset.StudentID,
+        "expires_in":  time.Until(passwordReset.ExpiresAt).Round(time.Minute).String(),
     })
 }
 
-// ResetPassword - Step 3: Reset password with token after code verification
 func ResetPassword(c *fiber.Ctx) error {
     type Request struct {
         StudentID      string `json:"student_id"`
@@ -135,11 +188,11 @@ func ResetPassword(c *fiber.Ctx) error {
 
     var req Request
     if err := c.BodyParser(&req); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
+        return c.Status(400).JSON(fiber.Map{"error": ErrCannotParseJSON})
     }
 
     if req.StudentID == "" {
-        return c.Status(400).JSON(fiber.Map{"error": "Student ID is required"})
+        return c.Status(400).JSON(fiber.Map{"error": ErrStudentIDRequired})
     }
 
     if req.Token == "" {
@@ -162,35 +215,27 @@ func ResetPassword(c *fiber.Ctx) error {
         return c.Status(400).JSON(fiber.Map{"error": "Password must be at least 6 characters"})
     }
 
-    // Find user by Student ID and valid reset token
-    var user models.User
-    if err := config.DB.Where("student_id = ? AND reset_token = ? AND reset_token_expiry > ?", 
-        req.StudentID, req.Token, time.Now()).First(&user).Error; err != nil {
-        log.Printf(" Invalid or expired reset token for Student ID %s: %s", req.StudentID, req.Token)
+    var passwordReset models.PasswordReset
+    if err := config.DB.Where("student_id = ? AND token = ? AND used = ? AND expires_at > ?", 
+        req.StudentID, req.Token, false, time.Now()).First(&passwordReset).Error; err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid or expired reset token"})
     }
 
-    // Hash new password
     hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 14)
     if err != nil {
         return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
     }
 
-    // Update user password and clear reset data
-    updates := map[string]interface{}{
-        "password":           string(hash),
-        "reset_token":        nil,
-        "reset_token_expiry": nil,
-        "reset_attempts":     0,
-        "verification_code":  nil, // Clear the verification code
+    var user models.User
+    if err := config.DB.Where("student_id = ?", req.StudentID).First(&user).Error; err != nil {
+        return c.Status(404).JSON(fiber.Map{"error": "User not found"})
     }
 
-    if err := config.DB.Model(&user).Updates(updates).Error; err != nil {
-        log.Printf(" Failed to reset password for Student ID %s: %v", req.StudentID, err)
+    if err := config.DB.Model(&user).Update("password", string(hash)).Error; err != nil {
         return c.Status(500).JSON(fiber.Map{"error": "Failed to reset password"})
     }
 
-    log.Printf(" Password reset successful for Student ID: %s", req.StudentID)
+    config.DB.Model(&passwordReset).Update("used", true)
 
     return c.JSON(fiber.Map{
         "success":    true,
@@ -200,7 +245,6 @@ func ResetPassword(c *fiber.Ctx) error {
     })
 }
 
-// ResendVerificationCode - Resend 6-digit code
 func ResendVerificationCode(c *fiber.Ctx) error {
     type Request struct {
         StudentID string `json:"student_id"`
@@ -208,37 +252,52 @@ func ResendVerificationCode(c *fiber.Ctx) error {
 
     var req Request
     if err := c.BodyParser(&req); err != nil {
-        return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
+        return c.Status(400).JSON(fiber.Map{"error": ErrCannotParseJSON})
     }
 
     if req.StudentID == "" {
-        return c.Status(400).JSON(fiber.Map{"error": "Student ID is required"})
+        return c.Status(400).JSON(fiber.Map{"error": ErrStudentIDRequired})
     }
 
-    // Find user by Student ID
     var user models.User
     if err := config.DB.Where("student_id = ?", req.StudentID).First(&user).Error; err != nil {
         return c.Status(404).JSON(fiber.Map{"error": "Student ID not found"})
     }
 
-    // Generate new 6-digit code
     newCode := utils.GenerateSixDigitCode()
+    newToken := utils.GenerateResetToken()
     newExpiry := time.Now().Add(10 * time.Minute)
 
-    // Update verification code
-    updates := map[string]interface{}{
-        "verification_code":  newCode,
-        "reset_token_expiry": newExpiry,
-        "last_reset_request": time.Now(),
+    if newToken == "" {
+        newToken = "resend_token_" + newCode
     }
 
-    if err := config.DB.Model(&user).Updates(updates).Error; err != nil {
-        return c.Status(500).JSON(fiber.Map{"error": "Failed to generate new code"})
+    var passwordReset models.PasswordReset
+    if err := config.DB.Where("student_id = ? AND used = ?", req.StudentID, false).First(&passwordReset).Error; err != nil {
+        passwordReset = models.PasswordReset{
+            StudentID:        req.StudentID,
+            Email:            user.Email,
+            VerificationCode: newCode,
+            Token:            newToken,
+            ExpiresAt:        newExpiry,
+            Used:             false,
+            CreatedAt:        time.Now(),
+        }
+        if err := config.DB.Create(&passwordReset).Error; err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": "Failed to create reset request"})
+        }
+    } else {
+        updates := map[string]interface{}{
+            "verification_code": newCode,
+            "token":             newToken,
+            "expires_at":        newExpiry,
+        }
+        if err := config.DB.Model(&passwordReset).Updates(updates).Error; err != nil {
+            return c.Status(500).JSON(fiber.Map{"error": "Failed to generate new code"})
+        }
     }
 
-    // Send new code via email
     if err := utils.SendVerificationCodeEmail(user.Email, newCode, user.StudentID); err != nil {
-        log.Printf("⚠️ Failed to resend verification code to %s: %v", user.Email, err)
         return c.Status(500).JSON(fiber.Map{"error": "Failed to send verification code"})
     }
 
@@ -248,5 +307,44 @@ func ResendVerificationCode(c *fiber.Ctx) error {
         "email":      user.Email,
         "student_id": user.StudentID,
         "expires_in": "10 minutes",
+    })
+}
+
+func DebugPasswordReset(c *fiber.Ctx) error {
+    studentId := c.Query("student_id")
+    
+    if studentId == "" {
+        return c.Status(400).JSON(fiber.Map{"error": "Student ID is required"})
+    }
+
+    var user models.User
+    if err := config.DB.Where("student_id = ?", studentId).First(&user).Error; err != nil {
+        return c.JSON(fiber.Map{"user_found": false})
+    }
+
+    var passwordResets []models.PasswordReset
+    config.DB.Where("student_id = ?", studentId).Order("created_at DESC").Find(&passwordResets)
+
+    resetData := []map[string]interface{}{}
+    for _, reset := range passwordResets {
+        resetData = append(resetData, map[string]interface{}{
+            "verification_code": reset.VerificationCode,
+            "token":             reset.Token,
+            "used":              reset.Used,
+            "expires_at":        reset.ExpiresAt,
+            "created_at":        reset.CreatedAt,
+            "is_expired":        time.Now().After(reset.ExpiresAt),
+        })
+    }
+
+    return c.JSON(fiber.Map{
+        "user_found": true,
+        "user": map[string]interface{}{
+            "student_id":  user.StudentID,
+            "email":       user.Email,
+            "is_verified": user.IsVerified,
+        },
+        "password_resets": resetData,
+        "current_time":    time.Now(),
     })
 }

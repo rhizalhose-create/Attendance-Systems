@@ -1,4 +1,4 @@
-// models/event.go
+
 
 package models
 
