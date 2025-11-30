@@ -71,8 +71,8 @@ func main() {
 
 	// Event Management Routes - Use the new handler names
 	eventRoutes := app.Group("/events")
-	eventRoutes.Post("/", handlers.CreateEventHandler)      // Changed
-	eventRoutes.Get("/", handlers.GetEventsHandler)         // Changed  
+	eventRoutes.Post("/", handlers.CreateEventHandler)
+	eventRoutes.Get("/", handlers.GetEventsHandler)
 	eventRoutes.Get("/:id", handlers.GetEventByIDHandler)   // Changed
 	eventRoutes.Put("/:id", handlers.UpdateEventHandler)    // Changed
 	eventRoutes.Delete("/:id", handlers.DeleteEventHandler) // Changed
@@ -80,7 +80,8 @@ func main() {
 eventRoutes.Get("/:id/students", handlers.GetEventStudents)        // Get affected students
 eventRoutes.Post("/:id/refresh-qr", handlers.RefreshEventQRCodes)  // Refresh QR codes
 
-	// User-specific events
+
+
 	app.Get("/my-events", handlers.GetMyEventsHandler) // Changed
 
 	// 404 Handler
