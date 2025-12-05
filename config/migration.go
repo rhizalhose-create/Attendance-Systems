@@ -10,11 +10,12 @@ import (
 func manualMigrate() error {
 	log.Println("Starting manual migration...")
 
-	if !DB.Migrator().HasTable(&models.User{}) {
-		log.Println("Creating users table...")
-		if err := DB.AutoMigrate(&models.User{}, &models.TempUser{}, &models.QRCodeType{}, &models.QRCodeEvent{}, &models.QRCodeScan{}); err != nil {
-			return fmt.Errorf("failed to create tables: %v", err)
+	// config/database.go - Add to manualMigrate()
+	if !DB.Migrator().HasTable(&models.Attendance{}) {
+		if err := DB.AutoMigrate(&models.Attendance{}); err != nil {
+			return fmt.Errorf("failed to create attendance table: %v", err)
 		}
+		log.Println("Attendance table created")
 		createDefaultQRCodeTypes()
 	} else {
 		addMissingColumns()

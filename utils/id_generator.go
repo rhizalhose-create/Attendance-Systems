@@ -34,3 +34,8 @@ func GenerateCustomStudentIDWithCourse(dbID uint, course string) string {
     
     return fmt.Sprintf("%s%s-%04d", coursePrefix, year, dbID)
 }
+
+// GenerateTemporaryStudentID generates a temporary ID for temp users
+func GenerateTemporaryStudentID() string {
+    return fmt.Sprintf("TEMP-%d", time.Now().UnixNano()%1000000)
+}
